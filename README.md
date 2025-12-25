@@ -102,9 +102,12 @@ npm run dev
 ## 🎨 Features
 
 - **One-Click Serendipity:** Generate random connections with a single click
+- **Custom Topics:** Enter your own topics to find connections between specific subjects
+- **Dual Mode:** Switch between random and custom topic generation
 - **Multi-Source Topics:** Pulls from Wikipedia, Pokémon, trivia, facts, numbers, quotes, and more
 - **AI-Powered Connections:** GPT-4 or Claude analyzes topics and finds genuine intellectual bridges
 - **Beautiful Animations:** Smooth, delightful animations enhance the discovery experience
+- **Robust Error Handling:** Automatic retry logic with fallback for external API failures
 - **Share Discoveries:** Unique URLs for each connection
 - **Favorites:** Save your favorite connections
 - **Browse & Explore:** View popular and recent connections
@@ -113,7 +116,7 @@ npm run dev
 
 ### Connection Endpoints
 - `POST /api/v1/connections/generate` - Generate a new random connection
-- `GET /api/v1/connections/random` - Get a pre-generated connection (fast)
+- `POST /api/v1/connections/generate-custom` - Generate a connection with custom topics
 - `GET /api/v1/connections/{id}` - Get specific connection
 - `GET /api/v1/connections` - List connections (paginated)
 - `GET /api/v1/connections/popular` - Most favorited connections
@@ -192,10 +195,11 @@ uv run alembic downgrade -1
 - [x] Core connection generation
 - [x] Multi-source topic fetching
 - [x] Beautiful UI with animations
+- [x] Custom topic input feature
+- [x] Robust error handling with retry logic
 - [ ] User authentication
 - [ ] Connection chains (A→B→C)
 - [ ] Adjustable "weirdness" level
-- [ ] Custom topic requests
 - [ ] Social sharing with metadata
 - [ ] Connection quality voting
 - [ ] Topic recommendations

@@ -111,13 +111,29 @@
 - Ensure PostgreSQL is running: `docker-compose up db`
 - Check that migrations have been run: `docker-compose exec backend alembic upgrade head`
 
+**"relation does not exist" database errors**
+- Run the database migrations: `docker-compose exec backend alembic upgrade head`
+- The initial migration creates all necessary tables
+
 **Frontend can't connect to backend**
 - Check that the backend is running on port 8000
 - Verify NEXT_PUBLIC_API_URL in `.env.local` points to `http://localhost:8000`
+- Check CORS_ORIGINS in `.env` includes `http://localhost:3001`
 
 **Port already in use errors**
-- Stop any services using ports 3000, 8000, 5432, or 6379
-- Or modify the port mappings in `docker-compose.yml`
+- Frontend runs on port 3001 (not 3000) to avoid common conflicts
+- Backend uses port 8000, PostgreSQL 5432, Redis 6379
+- Stop any services using these ports or modify `docker-compose.yml`
+
+**SSL certificate verification errors**
+- Development mode disables SSL verification for external APIs
+- Set `DEBUG=true` in `.env` to bypass SSL checks
+- This is handled automatically in the application
+
+**External API timeout errors**
+- The application includes automatic retry logic (up to 3 attempts)
+- Failed API calls automatically fall back to alternative sources
+- Check your internet connection if all sources fail
 
 ## Architecture Overview
 
@@ -162,11 +178,14 @@
 ## Key Features Implemented
 
 1. **Random Topic Fetching**: Pulls from 6 diverse external APIs
-2. **AI Connection Generation**: Uses GPT-4 to find genuine intellectual bridges
-3. **Beautiful UI**: Gradient effects, smooth animations, responsive design
-4. **Database Persistence**: Saves all topics and connections
-5. **Docker Support**: Easy deployment with docker-compose
-6. **API Documentation**: Auto-generated Swagger/OpenAPI docs
+2. **Custom Topic Input**: Users can enter their own topics to find connections
+3. **Dual Mode UI**: Switch between random and custom topic generation
+4. **AI Connection Generation**: Uses GPT-4 to find genuine intellectual bridges
+5. **Beautiful UI**: Gradient effects, smooth animations, responsive design
+6. **Robust Error Handling**: Automatic retry logic with fallback for API failures
+7. **Database Persistence**: Saves all topics and connections
+8. **Docker Support**: Easy deployment with docker-compose
+9. **API Documentation**: Auto-generated Swagger/OpenAPI docs
 
 ## Next Steps
 
@@ -179,9 +198,16 @@
 
 ## API Endpoints
 
-### Generate Connection
+### Generate Random Connection
 ```bash
 curl -X POST http://localhost:8000/api/v1/connections/generate
+```
+
+### Generate Custom Connection
+```bash
+curl -X POST http://localhost:8000/api/v1/connections/generate-custom \
+  -H "Content-Type: application/json" \
+  -d '{"topic_a": "Quantum Physics", "topic_b": "Jazz Music"}'
 ```
 
 ### Get Connection by ID
