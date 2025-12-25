@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ChevronDown } from 'lucide-react';
+import { Sparkles, ChevronDown, Shuffle, Edit3 } from 'lucide-react';
 import { ConnectionDisplay } from '@/components/connection/ConnectionDisplay';
 import { GenerateButton } from '@/components/connection/GenerateButton';
 import { TopicBubble } from '@/components/connection/TopicBubble';
@@ -16,10 +16,22 @@ export default function HomePage() {
     topicB,
     isGenerating,
     generate,
+    generateCustom,
     error
   } = useGenerateConnection();
 
   const [showHow, setShowHow] = useState(false);
+  const [mode, setMode] = useState<'random' | 'custom'>('random');
+  const [customTopicA, setCustomTopicA] = useState('');
+  const [customTopicB, setCustomTopicB] = useState('');
+
+  const handleGenerate = () => {
+    if (mode === 'random') {
+      generate();
+    } else {
+      generateCustom(customTopicA, customTopicB);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -63,10 +75,73 @@ export default function HomePage() {
 
         {/* Main Generator Area */}
         <div className="max-w-4xl mx-auto">
+          {/* Mode Toggle */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex bg-white/10 rounded-full p-1">
+              <button
+                onClick={() => setMode('random')}
+                className={`px-6 py-2 rounded-full font-medium transition-all flex items-center gap-2 ${
+                  mode === 'random'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-white/60 hover:text-white/80'
+                }`}
+              >
+                <Shuffle className="w-4 h-4" />
+                Random Topics
+              </button>
+              <button
+                onClick={() => setMode('custom')}
+                className={`px-6 py-2 rounded-full font-medium transition-all flex items-center gap-2 ${
+                  mode === 'custom'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-white/60 hover:text-white/80'
+                }`}
+              >
+                <Edit3 className="w-4 h-4" />
+                Custom Topics
+              </button>
+            </div>
+          </div>
+
+          {/* Custom Topic Inputs */}
+          <AnimatePresence mode="wait">
+            {mode === 'custom' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-8"
+              >
+                <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                  <div>
+                    <label className="block text-white/60 text-sm mb-2">Topic A</label>
+                    <input
+                      type="text"
+                      value={customTopicA}
+                      onChange={(e) => setCustomTopicA(e.target.value)}
+                      placeholder="e.g., Quantum Physics"
+                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white/60 text-sm mb-2">Topic B</label>
+                    <input
+                      type="text"
+                      value={customTopicB}
+                      onChange={(e) => setCustomTopicB(e.target.value)}
+                      placeholder="e.g., Jazz Music"
+                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Generate Button */}
           <div className="flex justify-center mb-12">
             <GenerateButton
-              onClick={generate}
+              onClick={handleGenerate}
               isLoading={isGenerating}
               hasConnection={!!connection}
             />
@@ -141,13 +216,13 @@ export default function HomePage() {
                 <div className="grid md:grid-cols-3 gap-6 mt-8">
                   <HowItWorksStep
                     number={1}
-                    title="Random Topics"
-                    description="We pull random content from Wikipedia, Pokémon lore, trivia databases, and more."
+                    title="Choose Your Mode"
+                    description="Pick random topics from our diverse sources, or enter your own custom topics to explore."
                   />
                   <HowItWorksStep
                     number={2}
                     title="AI Analysis"
-                    description="An AI examines both topics, looking for shared themes, historical parallels, and conceptual bridges."
+                    description="Our AI examines both topics, looking for shared themes, historical parallels, and conceptual bridges."
                   />
                   <HowItWorksStep
                     number={3}

@@ -1,9 +1,10 @@
 """Connection API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from typing import List
+from pydantic import BaseModel
 import uuid
 
 from app.database import get_db
@@ -11,8 +12,15 @@ from app.models.connection import Connection as ConnectionModel
 from app.models.topic import Topic as TopicModel
 from app.schemas.connection import GenerateConnectionResponse, Connection, ConnectionResponse
 from app.schemas.topic import Topic
+from app.services.topic_fetcher import Topic as TopicData, TopicSource
 
 router = APIRouter()
+
+
+class CustomTopicRequest(BaseModel):
+    """Request model for custom topic generation."""
+    topic_a: str
+    topic_b: str
 
 
 @router.post("/generate", response_model=GenerateConnectionResponse)
@@ -35,6 +43,109 @@ async def generate_connection(
 
     # Fetch two random topics
     topic_a_data, topic_b_data = await topic_fetcher.fetch_topic_pair()
+
+    # Save topics to database
+    topic_a_dict = topic_a_data.to_dict()
+    topic_b_dict = topic_b_data.to_dict()
+
+    # Check if topics already exist
+    topic_a_existing = await db.execute(
+        select(TopicModel).where(
+            TopicModel.source == topic_a_dict["source"],
+            TopicModel.title == topic_a_dict["title"],
+        )
+    )
+    topic_a_model = topic_a_existing.scalar_one_or_none()
+
+    if not topic_a_model:
+        topic_a_model = TopicModel(**topic_a_dict)
+        db.add(topic_a_model)
+        await db.flush()
+
+    topic_b_existing = await db.execute(
+        select(TopicModel).where(
+            TopicModel.source == topic_b_dict["source"],
+            TopicModel.title == topic_b_dict["title"],
+        )
+    )
+    topic_b_model = topic_b_existing.scalar_one_or_none()
+
+    if not topic_b_model:
+        topic_b_model = TopicModel(**topic_b_dict)
+        db.add(topic_b_model)
+        await db.flush()
+
+    # Generate AI connection
+    generated = await connection_generator.generate_connection(topic_a_data, topic_b_data)
+
+    # Save connection to database
+    connection_model = ConnectionModel(
+        topic_a_id=topic_a_model.id,
+        topic_b_id=topic_b_model.id,
+        connection_title=generated.title,
+        connection_summary=generated.summary,
+        connection_detailed=generated.detailed_explanation,
+        connection_type=generated.connection_type,
+        bridge_concepts=generated.bridge_concepts,
+        creativity_score=generated.creativity_score,
+        plausibility_score=generated.plausibility_score,
+        model_used=generated.model_used,
+        generation_time_ms=generated.generation_time_ms,
+        prompt_tokens=generated.prompt_tokens,
+        completion_tokens=generated.completion_tokens,
+    )
+
+    db.add(connection_model)
+    await db.commit()
+    await db.refresh(connection_model)
+    await db.refresh(topic_a_model)
+    await db.refresh(topic_b_model)
+
+    # Return response
+    return GenerateConnectionResponse(
+        topic_a=Topic.model_validate(topic_a_model),
+        topic_b=Topic.model_validate(topic_b_model),
+        connection=Connection.model_validate(connection_model),
+    )
+
+
+@router.post("/generate-custom", response_model=GenerateConnectionResponse)
+async def generate_custom_connection(
+    request: Request,
+    custom_topics: CustomTopicRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Generate a connection between two custom user-provided topics.
+
+    This endpoint allows users to input their own topics instead of using random ones.
+    """
+    connection_generator = request.app.state.connection_generator
+
+    # Create Topic objects from custom input
+    topic_a_data = TopicData(
+        source=TopicSource.WIKIPEDIA,  # Use a default source for custom topics
+        source_id="custom",
+        title=custom_topics.topic_a,
+        summary=custom_topics.topic_a,
+        full_content=None,
+        category="Custom",
+        tags=["custom", "user-provided"],
+        image_url=None,
+        source_url=None,
+    )
+
+    topic_b_data = TopicData(
+        source=TopicSource.WIKIPEDIA,
+        source_id="custom",
+        title=custom_topics.topic_b,
+        summary=custom_topics.topic_b,
+        full_content=None,
+        category="Custom",
+        tags=["custom", "user-provided"],
+        image_url=None,
+        source_url=None,
+    )
 
     # Save topics to database
     topic_a_dict = topic_a_data.to_dict()

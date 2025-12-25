@@ -7,6 +7,14 @@ export const connectionService = {
     return response.data;
   },
 
+  async generateCustomConnection(topicA: string, topicB: string): Promise<GenerateConnectionResponse> {
+    const response = await api.post<GenerateConnectionResponse>('/connections/generate-custom', {
+      topic_a: topicA,
+      topic_b: topicB,
+    });
+    return response.data;
+  },
+
   async getConnection(id: string): Promise<ConnectionResponse> {
     const response = await api.get<ConnectionResponse>(`/connections/${id}`);
     return response.data;
