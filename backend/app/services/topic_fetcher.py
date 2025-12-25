@@ -83,22 +83,54 @@ class TopicFetcher:
         }
 
     async def fetch_random_topic(
-        self, source: Optional[TopicSource] = None, exclude_sources: List[TopicSource] = None
+        self, source: Optional[TopicSource] = None, exclude_sources: List[TopicSource] = None, max_retries: int = 3
     ) -> Topic:
         """
         Fetch a single random topic, optionally from a specific source.
+        Retries with different sources if one fails.
         """
         if exclude_sources is None:
             exclude_sources = []
 
-        if source is None:
-            # Weighted random selection
-            available_sources = [s for s in TopicSource if s not in exclude_sources]
-            weights = [self.source_weights[s] for s in available_sources]
-            source = random.choices(available_sources, weights=weights, k=1)[0]
+        tried_sources = []
+        last_error = None
 
-        service = self.services[source]
-        return await service.fetch_random()
+        for attempt in range(max_retries):
+            try:
+                if source is None:
+                    # Weighted random selection from available sources
+                    available_sources = [
+                        s for s in TopicSource
+                        if s not in exclude_sources and s not in tried_sources
+                    ]
+                    if not available_sources:
+                        # If all sources have been tried, reset and try again
+                        tried_sources = []
+                        available_sources = [s for s in TopicSource if s not in exclude_sources]
+
+                    weights = [self.source_weights[s] for s in available_sources]
+                    selected_source = random.choices(available_sources, weights=weights, k=1)[0]
+                else:
+                    selected_source = source
+
+                service = self.services[selected_source]
+                topic = await service.fetch_random()
+                return topic
+
+            except Exception as e:
+                last_error = e
+                tried_sources.append(selected_source)
+                print(f"⚠️  Failed to fetch from {selected_source}: {str(e)}")
+
+                # If a specific source was requested and it failed, raise the error
+                if source is not None:
+                    raise
+
+                # Otherwise, try another source
+                continue
+
+        # If all retries failed, raise the last error
+        raise Exception(f"Failed to fetch topic after {max_retries} attempts. Last error: {last_error}")
 
     async def fetch_topic_pair(self, ensure_different_sources: bool = True) -> tuple[Topic, Topic]:
         """

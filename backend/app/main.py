@@ -24,7 +24,13 @@ async def lifespan(app: FastAPI):
     print("✨ Serendipity Engine starting up...")
 
     # Initialize HTTP client
-    app.state.http_client = httpx.AsyncClient(timeout=30.0)
+    # Disable SSL verification in development to handle expired certificates
+    verify_ssl = not settings.debug
+    app.state.http_client = httpx.AsyncClient(
+        timeout=30.0,
+        verify=verify_ssl,
+        follow_redirects=True
+    )
 
     # Initialize services
     http = app.state.http_client
