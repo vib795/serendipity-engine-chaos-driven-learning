@@ -125,7 +125,7 @@ async def generate_custom_connection(
     # Create Topic objects from custom input
     topic_a_data = TopicData(
         source=TopicSource.WIKIPEDIA,  # Use a default source for custom topics
-        source_id="custom",
+        source_id=None,  # No external source ID for custom topics
         title=custom_topics.topic_a,
         summary=custom_topics.topic_a,
         full_content=None,
@@ -137,7 +137,7 @@ async def generate_custom_connection(
 
     topic_b_data = TopicData(
         source=TopicSource.WIKIPEDIA,
-        source_id="custom",
+        source_id=None,  # No external source ID for custom topics
         title=custom_topics.topic_b,
         summary=custom_topics.topic_b,
         full_content=None,
@@ -151,11 +151,12 @@ async def generate_custom_connection(
     topic_a_dict = topic_a_data.to_dict()
     topic_b_dict = topic_b_data.to_dict()
 
-    # Check if topics already exist
+    # Check if topics already exist (for custom topics, check by source, title, and category)
     topic_a_existing = await db.execute(
         select(TopicModel).where(
             TopicModel.source == topic_a_dict["source"],
             TopicModel.title == topic_a_dict["title"],
+            TopicModel.category == "Custom",
         )
     )
     topic_a_model = topic_a_existing.scalar_one_or_none()
@@ -169,6 +170,7 @@ async def generate_custom_connection(
         select(TopicModel).where(
             TopicModel.source == topic_b_dict["source"],
             TopicModel.title == topic_b_dict["title"],
+            TopicModel.category == "Custom",
         )
     )
     topic_b_model = topic_b_existing.scalar_one_or_none()
