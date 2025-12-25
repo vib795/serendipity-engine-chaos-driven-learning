@@ -25,7 +25,7 @@
    ```
 
 4. **Access the application**
-   - Frontend: http://localhost:3000
+   - Frontend: http://localhost:3001
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
 
@@ -93,7 +93,7 @@
 
 ## Testing the Application
 
-1. **Visit http://localhost:3000**
+1. **Visit http://localhost:3001**
 
 2. **Click the "Generate Connection" button**
 
@@ -124,7 +124,7 @@
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    User's Browser                        │
-│                  (http://localhost:3000)                 │
+│                  (http://localhost:3001)                 │
 └─────────────────────┬───────────────────────────────────┘
                       │
                       ▼

@@ -12,7 +12,7 @@ services:
       - DATABASE_URL_SYNC=postgresql://postgres:password@db:5432/serendipity
       - REDIS_URL=redis://redis:6379/0
       - SECRET_KEY=dev-secret-key-change-in-production
-      - CORS_ORIGINS=["http://localhost:3000"]
+      - CORS_ORIGINS=["http://localhost:3001"]
       - DEBUG=true
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - AI_MODEL=gpt-4-turbo-preview
@@ -32,7 +32,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     volumes:

@@ -63,7 +63,7 @@ The app fetches random data from multiple unrelated APIs (Wikipedia, Pokémon, t
    ```
 
 4. **Access the application:**
-   - Frontend: http://localhost:3000
+   - Frontend: http://localhost:3001
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
 
